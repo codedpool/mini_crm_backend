@@ -7,6 +7,10 @@ const swaggerJsDoc = require('swagger-jsdoc');
 
 const authRoutes = require('./routes/auth.routes');
 
+const userRoutes = require('./routes/users.routes');
+
+
+
 
 const app = express();
 
@@ -48,6 +52,9 @@ app.get('/', (req, res) => {
   res.json({ message: 'Mini CRM Backend is running!' });
 });
 
+
 app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+
 
 module.exports = app;
