@@ -1,14 +1,66 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  // In Prisma 7, the URL is configured in prisma.config.ts, not here.
+}
+
+// 1. User Model (Admin or Employee)
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+
+  // Relations
+  tasks     Task[]   
+}
+
+// 2. Customer Model
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  company   String?  // Optional
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tasks     Task[]   
+}
+
+// 3. Task Model
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+
+  // Foreign Keys
+  assignedTo  Int
+  user        User       @relation(fields: [assignedTo], references: [id])
+
+  customerId  Int
+  customer    Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Enums
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
 }
