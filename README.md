@@ -54,9 +54,13 @@ mini-crm-backend/
 ├─ .env.example              # Example env variables
 ├─ package.json
 └─ README.md
+```
 
-Database Schema (Prisma)
-prisma/schema.prisma defines 3 core models and enums:
+---
+
+## Database Schema (Prisma)
+
+`prisma/schema.prisma` defines 3 core models and enums:
 
 User
 
@@ -88,10 +92,11 @@ Enums:
 ---
 
 ## Setup Instructions
-1. Prerequisites
-Node.js (LTS)
 
-PostgreSQL running locally (e.g., on localhost:5432)
+### 1. Prerequisites
+
+- Node.js (LTS)
+- PostgreSQL running locally (e.g., on `localhost:5432`)
 
 Create a PostgreSQL database, e.g.:
 
@@ -102,43 +107,61 @@ bash
 git clone <your-repo-url>
 cd mini-crm-backend
 npm install
-3. Environment variables
-Create a .env file in the project root (based on .env.example):
+```
 
-text
+### 3. Environment variables
+
+Create a `.env` file in the project root (based on `.env.example`):
+
+```text
 # .env
 DATABASE_URL="postgresql://postgres:password@localhost:5432/crm_db?schema=public"
 JWT_SECRET="your_jwt_secret_here"
 PORT=3000
-DATABASE_URL: Adjust username, password, host, port, and db name as per your local PostgreSQL setup.
+```
 
-JWT_SECRET: Any strong random string.
+- **DATABASE_URL:** Adjust username, password, host, port, and db name as per your local PostgreSQL setup.
+- **JWT_SECRET:** Any strong random string.
+- **PORT:** Optional; defaults to 3000.
 
-PORT: Optional; defaults to 3000.
+### 4. Database migration (Prisma)
 
-4. Database migration (Prisma)
 Generate client and apply schema:
 
-bash
+```bash
 npx prisma migrate dev --name init_schema
+```
+
 (Optional) Open Prisma Studio to inspect tables:
 
-bash
+```bash
 npx prisma studio
-Running the Server
-Development
-bash
+```
+
+---
+
+## Running the Server
+
+### Development
+
+```bash
 npm run dev
+```
+
 The server will start on http://localhost:3000.
 
-Health check: GET / → { "message": "Mini CRM Backend is running!" }
+- **Health check:** `GET /` → `{ "message": "Mini CRM Backend is running!" }`
+- **Swagger UI:** http://localhost:3000/api-docs
 
-Swagger UI: http://localhost:3000/api-docs
+### Production (simple)
 
-Production (simple)
-bash
+```bash
 npm start
-API Documentation (Swagger)
+```
+
+---
+
+## API Documentation (Swagger)
 Swagger is configured using swagger-jsdoc + swagger-ui-express and reads JSDoc comments from `src/routes/*.js`.
 
 Visit: http://localhost:3000/api-docs
@@ -178,36 +201,38 @@ Base path: `/auth`
 
 Registers a new user (ADMIN or EMPLOYEE).
 
-Request body:
+**Request body:**
 
-json
+```json
 {
   "name": "Admin User",
   "email": "admin@example.com",
   "password": "password123",
   "role": "ADMIN"
 }
-Rules:
+```
 
-Valid email, unique.
+**Rules:**
+- Valid email, unique.
+- Password min 8 chars and stored hashed (bcrypt).
+- Response returns: `id`, `name`, `email`, `role` (no password).
 
-Password min 8 chars and stored hashed (bcrypt).
+#### POST /auth/login
 
-Response returns: id, name, email, role (no password).
-
-POST /auth/login
 Logs in a user and returns JWT.
 
-Request:
+**Request:**
 
-json
+```json
 {
   "email": "admin@example.com",
   "password": "password123"
 }
-Response:
+```
 
-json
+**Response:**
+
+```json
 {
   "accessToken": "<JWT>",
   "user": {
@@ -217,9 +242,10 @@ json
     "role": "ADMIN"
   }
 }
-Errors:
+```
 
-401 Unauthorized for invalid email/password.
+**Errors:**
+- 401 Unauthorized for invalid email/password.
 
 ### 2. Users Module (Admin Only)
 
@@ -230,9 +256,9 @@ Access: **ADMIN only**
 
 Returns list of users.
 
-Response shape:
+**Response shape:**
 
-json
+```json
 [
   {
     "id": 1,
@@ -242,22 +268,28 @@ json
     "createdAt": "..."
   }
 ]
-GET /users/:id
+```
+
+#### GET /users/:id
+
 Returns single user by id.
 
-404 if not found.
+- 404 if not found.
 
-PATCH /users/:id
+#### PATCH /users/:id
+
 Updates role only.
 
-Request:
+**Request:**
 
-json
+```json
 {
   "role": "EMPLOYEE"
 }
-Valid roles: ADMIN, EMPLOYEE.
-Errors: 400 for invalid role, 404 if user not found.
+```
+
+- Valid roles: ADMIN, EMPLOYEE.
+- Errors: 400 for invalid role, 404 if user not found.
 
 ### 3. Customers Module
 
@@ -272,39 +304,36 @@ Base path: `/customers`
 
 Creates a new customer.
 
-Request:
+**Request:**
 
-json
+```json
 {
   "name": "John Doe",
   "email": "john@example.com",
   "phone": "9999999999",
   "company": "Acme Inc"
 }
-Constraints:
+```
 
-email unique
+**Constraints:**
+- `email` unique
+- `phone` unique
 
-phone unique
+**Errors:**
+- 400 for validation errors.
+- 409 for duplicate email/phone.
 
-Errors:
+#### GET /customers (ADMIN + EMPLOYEE)
 
-400 for validation errors.
-
-409 for duplicate email/phone.
-
-GET /customers (ADMIN + EMPLOYEE)
 Returns paginated customers.
 
-Query params:
+**Query params:**
+- `page` (default: 1)
+- `limit` (default: 10)
 
-page (default: 1)
+**Response:**
 
-limit (default: 10)
-
-Response:
-
-json
+```json
 {
   "page": 1,
   "limit": 10,
@@ -322,20 +351,24 @@ json
     }
   ]
 }
-GET /customers/:id (ADMIN + EMPLOYEE)
+```
+
+#### GET /customers/:id (ADMIN + EMPLOYEE)
+
 Returns customer by id.
 
-404 if not found.
+- 404 if not found.
 
-PATCH /customers/:id (ADMIN only)
+#### PATCH /customers/:id (ADMIN only)
+
 Partial update of name, email, phone, company.
 
-DELETE /customers/:id (ADMIN only)
+#### DELETE /customers/:id (ADMIN only)
+
 Deletes a customer.
 
-204 No Content on success.
-
-404 if not found.
+- 204 No Content on success.
+- 404 if not found.
 
 ### 4. Tasks Module
 
@@ -355,12 +388,13 @@ Base path: `/tasks`
 - `assignedTo` must be an existing user with role EMPLOYEE.
 - `customerId` must be an existing customer.
 
-POST /tasks (ADMIN only)
+#### POST /tasks (ADMIN only)
+
 Creates a task.
 
-Request:
+**Request:**
 
-json
+```json
 {
   "title": "Call customer",
   "description": "Follow up on proposal",
@@ -368,30 +402,27 @@ json
   "customerId": 1,
   "status": "PENDING"
 }
-Defaults: status = PENDING if not provided.
+```
 
-Errors:
+- Defaults: `status` = PENDING if not provided.
 
-404 if assigned user not found or not an EMPLOYEE.
+**Errors:**
+- 404 if assigned user not found or not an EMPLOYEE.
+- 404 if customer not found.
 
-404 if customer not found.
+**Response includes:**
+- Task fields.
+- `assignedTo` user metadata (id, name, email).
+- `customer` metadata (id, name, email, phone).
 
-Response includes:
+#### GET /tasks (ADMIN + EMPLOYEE)
 
-Task fields.
-
-assignedTo user metadata (id, name, email).
-
-customer metadata (id, name, email, phone).
-
-GET /tasks (ADMIN + EMPLOYEE)
-If ADMIN: returns all tasks.
-
-If EMPLOYEE: returns only tasks where assignedTo = current user.
+- If ADMIN: returns all tasks.
+- If EMPLOYEE: returns only tasks where `assignedTo` = current user.
 
 Each task includes:
 
-json
+```json
 {
   "id": 1,
   "title": "...",
@@ -404,94 +435,119 @@ json
   "user": { "id": 2, "name": "Emp", "email": "emp@example.com" },
   "customer": { "id": 1, "name": "John", "email": "john@example.com", "phone": "9999999999" }
 }
-PATCH /tasks/:id/status (ADMIN + EMPLOYEE)
-Request:
+```
 
-json
+#### PATCH /tasks/:id/status (ADMIN + EMPLOYEE)
+
+**Request:**
+
+```json
 {
   "status": "IN_PROGRESS"
 }
-Rules:
+```
 
-EMPLOYEE can only update tasks assigned to them. Else 403 Forbidden.
+**Rules:**
+- EMPLOYEE can only update tasks assigned to them. Else 403 Forbidden.
+- ADMIN can update any task.
+- 404 if task not found.
 
-ADMIN can update any task.
+---
 
-404 if task not found.
+## Example curl Commands
 
-Example curl Commands
-Note: Replace <ADMIN_TOKEN> and <EMP_TOKEN> with real tokens from /auth/login.
+**Note:** Replace `<ADMIN_TOKEN>` and `<EMP_TOKEN>` with real tokens from `/auth/login`.
 
-Auth
-Register admin:
+### Auth
 
-bash
+**Register admin:**
+
+```bash
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Admin User","email":"admin@example.com","password":"password123","role":"ADMIN"}'
-Login:
+```
 
-bash
+**Login:**
+
+```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password123"}'
-Users (Admin only)
-bash
+```
+
+### Users (Admin only)
+
+```bash
 curl -X GET http://localhost:3000/users \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
-Customers
-Create:
+```
 
-bash
+### Customers
+
+**Create:**
+
+```bash
 curl -X POST http://localhost:3000/customers \
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"name":"John","email":"john@example.com","phone":"9999999999","company":"Acme"}'
-List:
+```
 
-bash
+**List:**
+
+```bash
 curl -X GET "http://localhost:3000/customers?page=1&limit=10" \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
-Tasks
-Create task as admin:
+```
 
-bash
+### Tasks
+
+**Create task as admin:**
+
+```bash
 curl -X POST http://localhost:3000/tasks \
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"title":"Call customer","description":"Follow up","assignedTo":2,"customerId":1,"status":"PENDING"}'
-Get tasks as admin:
+```
 
-bash
+**Get tasks as admin:**
+
+```bash
 curl -X GET http://localhost:3000/tasks \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
-Update status:
+```
 
-bash
+**Update status:**
+
+```bash
 curl -X PATCH http://localhost:3000/tasks/1/status \
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"status":"DONE"}'
-Smoke Test Script
+```
+
+---
+
+## Smoke Test Script
+
 A simple script is included to verify main flows end-to-end:
 
-bash
+```bash
 npm run smoke:test
+```
+
 It performs:
+- Register admin.
+- Login admin (get JWT).
+- Register employee.
+- Create customer.
+- Create task assigned to employee.
+- List tasks as admin.
+- Check console output to confirm all steps return expected statuses (201 / 200).
 
-Register admin.
-
-Login admin (get JWT).
-
-Register employee.
-
-Create customer.
-
-Create task assigned to employee.
-
-List tasks as admin.
-
-Check console output to confirm all steps return expected statuses (201 / 200).!
+---
 
 ## Notes
 
