@@ -8,7 +8,7 @@ const swaggerJsDoc = require('swagger-jsdoc');
 const authRoutes = require('./routes/auth.routes');
 
 const userRoutes = require('./routes/users.routes');
-
+const customerRoutes = require('./routes/customers.routes');
 
 
 
@@ -55,6 +55,7 @@ app.get('/', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/customers', customerRoutes);
 
 
 module.exports = app;
