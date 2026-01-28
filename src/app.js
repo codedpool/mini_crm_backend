@@ -6,22 +6,17 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 
 const authRoutes = require('./routes/auth.routes');
-
 const userRoutes = require('./routes/users.routes');
 const customerRoutes = require('./routes/customers.routes');
 const taskRoutes = require('./routes/tasks.routes');
 
-
-
 const app = express();
 
-// Middlewares
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
-// Swagger Config
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: '3.0.0',
@@ -30,7 +25,11 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'Backend API for CRM system (Node.js/Express)',
     },
-    servers: [{ url: 'http://localhost:3000' }],
+    servers: [
+      {
+        url: '/',
+      },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -42,23 +41,19 @@ const swaggerOptions = {
     },
     security: [{ bearerAuth: [] }],
   },
-  apis: ['./src/routes/*.js'], // Path to the API docs
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Basic Route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Mini CRM Backend is running!' });
 });
-
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/customers', customerRoutes);
 app.use('/tasks', taskRoutes);
-
-
 
 module.exports = app;
