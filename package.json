@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "smoke:test": "node scripts/smoke-test.js"
+    "smoke:test": "node scripts/smoke-test.js",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,8 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.2.2"
   }
 }

@@ -47,14 +47,25 @@ const createCustomer = async (data) => {
   }
 };
 
-const getCustomers = async ({ page = 1, limit = 10 }) => {
+const getCustomers = async ({ page = 1, limit = 10, search }) => {
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 10;
   const skip = (pageNum - 1) * limitNum;
 
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { company: { contains: search, mode: 'insensitive' } },
+        ],
+      }
+    : {};
+
   const [totalRecords, data] = await Promise.all([
-    prisma.customer.count(),
+    prisma.customer.count({ where }),
     prisma.customer.findMany({
+      where,
       skip,
       take: limitNum,
       orderBy: { id: 'asc' },

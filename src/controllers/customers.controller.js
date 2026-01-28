@@ -12,8 +12,8 @@ const createCustomer = async (req, res) => {
 
 const getCustomers = async (req, res) => {
   try {
-    const { page, limit } = req.query;
-    const result = await customersService.getCustomers({ page, limit });
+    const { page, limit, search } = req.query;
+    const result = await customersService.getCustomers({ page, limit, search });
     return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ message: err.message || 'Internal server error' });

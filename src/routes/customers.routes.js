@@ -27,10 +27,15 @@ const requireRole = require('../middlewares/role.middleware');
  *             type: object
  *             required: [name, email, phone]
  *             properties:
- *               name: { type: string }
- *               email: { type: string, format: email }
- *               phone: { type: string }
- *               company: { type: string }
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *               company:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Customer created
@@ -50,7 +55,7 @@ router.post(
  * @swagger
  * /customers:
  *   get:
- *     summary: Get customers with pagination (ADMIN + EMPLOYEE)
+ *     summary: Get customers with pagination and optional search (ADMIN + EMPLOYEE)
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
@@ -63,6 +68,11 @@ router.post(
  *         name: limit
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by name, email, or company (case-insensitive)
  *     responses:
  *       200:
  *         description: Paginated customer list
@@ -122,10 +132,15 @@ router.get(
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string }
- *               email: { type: string, format: email }
- *               phone: { type: string }
- *               company: { type: string }
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *               company:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Customer updated
