@@ -2,20 +2,25 @@
 
 Backend for a mini CRM system built for the Prysm Labs Backend Developer Intern assignment. Implements authentication, role-based authorization, and CRUD operations for Users, Customers, and Tasks using Node.js, Express, PostgreSQL, and Prisma ORM.
 
-![Mini CRM API Screenshot](./image.png)
+**Live Deployment:**
+
+- API base URL: https://mini-crm-backend-nyuy.onrender.com
+- Swagger UI: https://mini-crm-backend-nyuy.onrender.com/api-docs
 
 ---
 
 ## Tech Stack
 
 - Node.js (Express)
-- PostgreSQL
+- PostgreSQL (local or Neon on Render)
 - Prisma ORM (v6)
 - JWT Authentication (`jsonwebtoken`)
 - Password hashing (`bcrypt`)
 - Input validation (`joi`)
 - API Documentation: Swagger (`swagger-ui-express`, `swagger-jsdoc`)
 - Logging & security middleware: `morgan`, `helmet`, `cors`
+- Testing: Jest + Supertest
+- Containerization: Docker + docker-compose
 
 ---
 
@@ -24,13 +29,13 @@ Backend for a mini CRM system built for the Prysm Labs Backend Developer Intern 
 ```txt
 mini-crm-backend/
 ├─ prisma/
-│  ├─ schema.prisma          # Prisma models (User, Customer, Task, enums)
+│  └─ schema.prisma          # Prisma models (User, Customer, Task, enums)
 ├─ src/
 │  ├─ app.js                 # Express app setup (middlewares, Swagger, routes)
-│  ├─ server.js              # Server bootstrap (reads PORT from .env)
+│  ├─ server.js              # Server bootstrap (reads PORT from env)
 │  ├─ config/
 │  │  └─ prisma.js           # PrismaClient instance
-│  ├─ controllers/           # HTTP controllers (no business logic)
+│  ├─ controllers/           # HTTP controllers
 │  │  ├─ auth.controller.js
 │  │  ├─ users.controller.js
 │  │  ├─ customers.controller.js
@@ -43,18 +48,24 @@ mini-crm-backend/
 │  ├─ middlewares/
 │  │  ├─ auth.middleware.js  # JWT verification
 │  │  └─ role.middleware.js  # Role-based access control
-│  ├─ routes/                # Express route definitions + Swagger docs
+│  ├─ routes/                # Express routes + Swagger docs
 │  │  ├─ auth.routes.js
 │  │  ├─ users.routes.js
 │  │  ├─ customers.routes.js
 │  │  └─ tasks.routes.js
 ├─ scripts/
 │  └─ smoke-test.js          # Simple end-to-end smoke test script
-├─ .env                      # Environment variables (not committed)
+├─ tests/
+│  └─ auth.customers.test.js # Jest integration tests
+├─ Dockerfile
+├─ docker-compose.yml
+├─ .env                      # Environment variables (ignored by Git)
 ├─ .env.example              # Example env variables
 ├─ package.json
 └─ README.md
 ```
+
+The architecture uses routes → controllers → services → Prisma, with dedicated middlewares for authentication and role checks.
 
 ---
 
@@ -64,46 +75,49 @@ mini-crm-backend/
 
 User
 
-id, name, email (unique), password (hashed), role (ADMIN or EMPLOYEE), createdAt
+Fields: id, name, email (unique), password (hashed), role (ADMIN or EMPLOYEE), createdAt
 
-Relation: tasks (one-to-many)
+Relations: tasks (one-to-many)
 
 Customer
 
-id, name, email (unique), phone (unique), company, createdAt, updatedAt
+Fields: id, name, email (unique), phone (unique), company, createdAt, updatedAt
 
-Relation: tasks (one-to-many)
+Relations: tasks (one-to-many)
 
 Task
 
-id, title, description, status (PENDING, IN_PROGRESS, DONE)
+Fields: id, title, description, status (PENDING, IN_PROGRESS, DONE), assignedTo, customerId, createdAt, updatedAt
 
-assignedTo (FK to User with role EMPLOYEE)
+Relations:
 
-customerId (FK to Customer, cascade on delete)
+assignedTo → User (must be EMPLOYEE)
 
-createdAt, updatedAt
+customerId → Customer (cascade on delete)
 
-Enums:
+### Enums
 
-- Role: ADMIN, EMPLOYEE
-- TaskStatus: PENDING, IN_PROGRESS, DONE
+- **Role:** ADMIN, EMPLOYEE
+- **TaskStatus:** PENDING, IN_PROGRESS, DONE
 
 ---
 
-## Setup Instructions
+## Setup Instructions (Local, non-Docker)
 
 ### 1. Prerequisites
 
 - Node.js (LTS)
 - PostgreSQL running locally (e.g., on `localhost:5432`)
 
-Create a PostgreSQL database, e.g.:
+Create a PostgreSQL database:
 
-sql
+```sql
 CREATE DATABASE crm_db;
-2. Clone and install dependencies
-bash
+```
+
+### 2. Clone and install dependencies
+
+```bash
 git clone <your-repo-url>
 cd mini-crm-backend
 npm install
@@ -114,25 +128,21 @@ npm install
 Create a `.env` file in the project root (based on `.env.example`):
 
 ```text
-# .env
+# Local development
 DATABASE_URL="postgresql://postgres:password@localhost:5432/crm_db?schema=public"
 JWT_SECRET="your_jwt_secret_here"
 PORT=3000
 ```
 
-- **DATABASE_URL:** Adjust username, password, host, port, and db name as per your local PostgreSQL setup.
-- **JWT_SECRET:** Any strong random string.
-- **PORT:** Optional; defaults to 3000.
+Adjust username/password/host/db name as per your local Postgres.
 
 ### 4. Database migration (Prisma)
-
-Generate client and apply schema:
 
 ```bash
 npx prisma migrate dev --name init_schema
 ```
 
-(Optional) Open Prisma Studio to inspect tables:
+(Optional) inspect data:
 
 ```bash
 npx prisma studio
@@ -140,7 +150,7 @@ npx prisma studio
 
 ---
 
-## Running the Server
+## Running the Server (Local)
 
 ### Development
 
@@ -148,7 +158,7 @@ npx prisma studio
 npm run dev
 ```
 
-The server will start on http://localhost:3000.
+Server: http://localhost:3000
 
 - **Health check:** `GET /` → `{ "message": "Mini CRM Backend is running!" }`
 - **Swagger UI:** http://localhost:3000/api-docs
@@ -162,15 +172,19 @@ npm start
 ---
 
 ## API Documentation (Swagger)
-Swagger is configured using swagger-jsdoc + swagger-ui-express and reads JSDoc comments from `src/routes/*.js`.
 
-Visit: http://localhost:3000/api-docs
+Swagger uses `swagger-jsdoc` and `swagger-ui-express` with annotations in `src/routes/*.js`.
+
+- **Local:** http://localhost:3000/api-docs
+- **Render:** https://mini-crm-backend-nyuy.onrender.com/api-docs
+
+Swagger is configured with a relative server URL (/), so it works on both local and Render without CSP issues.
 
 Supports:
 
 Request/response schemas
 
-JWT Bearer auth (click “Authorize” and paste Bearer <token>)
+JWT Bearer auth (button “Authorize” → paste Bearer <token>)
 
 Authentication & Authorization
 Roles
@@ -181,58 +195,60 @@ EMPLOYEE
 JWT
 Login returns accessToken (JWT) and user details.
 
-JWT payload includes: userId, role.
+JWT payload includes userId and role.
 
-Protected routes require header:
+Protected routes require:
 
 text
 Authorization: Bearer <accessToken>
-Middlewares
-auth.middleware.js: Verifies JWT, attaches req.user = { userId, role }.
+```
 
-role.middleware.js: Ensures req.user.role is in allowed roles; else 403 Forbidden.
+### Middlewares
 
-Core Modules and Endpoints
+- `auth.middleware.js`: verifies JWT, sets `req.user = { userId, role }`.
+- `role.middleware.js`: checks `req.user.role` against allowed roles; returns 403 Forbidden if not allowed.
+
+---
+
+## Core Modules and Endpoints
+
 ### 1. Auth Module
 
 Base path: `/auth`
 
 #### POST /auth/register
-
 Registers a new user (ADMIN or EMPLOYEE).
 
-**Request body:**
+Request:
 
-```json
+json
 {
   "name": "Admin User",
   "email": "admin@example.com",
   "password": "password123",
   "role": "ADMIN"
 }
-```
+Rules:
 
-**Rules:**
-- Valid email, unique.
-- Password min 8 chars and stored hashed (bcrypt).
-- Response returns: `id`, `name`, `email`, `role` (no password).
+Email: valid and unique.
+
+Password: minimum 8 characters, stored hashed with bcrypt.
+
+- Response: `id`, `name`, `email`, `role` (no password).
 
 #### POST /auth/login
-
 Logs in a user and returns JWT.
 
-**Request:**
+Request:
 
-```json
+json
 {
   "email": "admin@example.com",
   "password": "password123"
 }
-```
+Response:
 
-**Response:**
-
-```json
+json
 {
   "accessToken": "<JWT>",
   "user": {
@@ -242,23 +258,17 @@ Logs in a user and returns JWT.
     "role": "ADMIN"
   }
 }
-```
-
 **Errors:**
 - 401 Unauthorized for invalid email/password.
 
 ### 2. Users Module (Admin Only)
-
 Base path: `/users`  
 Access: **ADMIN only**
 
 #### GET /users
+Returns list of users:
 
-Returns list of users.
-
-**Response shape:**
-
-```json
+json
 [
   {
     "id": 1,
@@ -272,7 +282,7 @@ Returns list of users.
 
 #### GET /users/:id
 
-Returns single user by id.
+Returns user by id.
 
 - 404 if not found.
 
@@ -288,23 +298,22 @@ Updates role only.
 }
 ```
 
-- Valid roles: ADMIN, EMPLOYEE.
-- Errors: 400 for invalid role, 404 if user not found.
+**Rules:**
+- Role must be ADMIN or EMPLOYEE.
+- 400 for invalid role.
+- 404 if user not found.
 
 ### 3. Customers Module
 
 Base path: `/customers`
 
 **Access Control:**
-
 - **ADMIN:** full CRUD.
 - **EMPLOYEE:** read-only (GET /customers, GET /customers/:id).
 
-#### POST /customers (ADMIN only)
+#### POST /customers (ADMIN)
 
-Creates a new customer.
-
-**Request:**
+Creates a customer.
 
 ```json
 {
@@ -320,20 +329,23 @@ Creates a new customer.
 - `phone` unique
 
 **Errors:**
-- 400 for validation errors.
-- 409 for duplicate email/phone.
+- 400 validation errors.
+- 409 duplicate email/phone.
 
 #### GET /customers (ADMIN + EMPLOYEE)
+Paginated list with optional search.
 
-Returns paginated customers.
+Query params:
 
-**Query params:**
-- `page` (default: 1)
-- `limit` (default: 10)
+page (default 1)
 
-**Response:**
+limit (default 10)
 
-```json
+search (optional, filters by name/email/company, case-insensitive)
+
+Response:
+
+json
 {
   "page": 1,
   "limit": 10,
@@ -351,50 +363,52 @@ Returns paginated customers.
     }
   ]
 }
-```
+**Examples:**
+- `GET /customers?page=1&limit=10`
+- `GET /customers?search=john`
 
 #### GET /customers/:id (ADMIN + EMPLOYEE)
-
 Returns customer by id.
 
-- 404 if not found.
+404 if not found.
 
-#### PATCH /customers/:id (ADMIN only)
-
+PATCH /customers/:id (ADMIN)
 Partial update of name, email, phone, company.
 
-#### DELETE /customers/:id (ADMIN only)
+#### DELETE /customers/:id (ADMIN)
 
-Deletes a customer.
+Deletes customer.
 
-- 204 No Content on success.
+- 204 No Content when deleted.
 - 404 if not found.
 
 ### 4. Tasks Module
 
 Base path: `/tasks`
 
-**Access Control & Rules:**
+**Access & Rules:**
 
-**ADMIN:**
-- Can create tasks.
-- Can view all tasks.
-- Can update status of any task.
+ADMIN:
 
-**EMPLOYEE:**
-- Can view only tasks assigned to them.
-- Can update status only for their own tasks.
+Can create tasks.
 
-- `assignedTo` must be an existing user with role EMPLOYEE.
+Can view all tasks.
+
+Can update status of any task.
+
+EMPLOYEE:
+
+Can view only tasks assigned to them.
+
+Can update status only for their own tasks.
+
+- `assignedTo` must be an existing EMPLOYEE.
 - `customerId` must be an existing customer.
 
-#### POST /tasks (ADMIN only)
-
+#### POST /tasks (ADMIN)
 Creates a task.
 
-**Request:**
-
-```json
+json
 {
   "title": "Call customer",
   "description": "Follow up on proposal",
@@ -404,29 +418,29 @@ Creates a task.
 }
 ```
 
-- Defaults: `status` = PENDING if not provided.
+- `status` defaults to PENDING if omitted.
 
 **Errors:**
-- 404 if assigned user not found or not an EMPLOYEE.
+- 404 if assigned user not found or not EMPLOYEE.
 - 404 if customer not found.
 
 **Response includes:**
 - Task fields.
-- `assignedTo` user metadata (id, name, email).
-- `customer` metadata (id, name, email, phone).
+- `user` (assigned employee metadata: id, name, email).
+- `customer` metadata: id, name, email, phone.
 
 #### GET /tasks (ADMIN + EMPLOYEE)
 
-- If ADMIN: returns all tasks.
-- If EMPLOYEE: returns only tasks where `assignedTo` = current user.
+- **ADMIN:** all tasks.
+- **EMPLOYEE:** only tasks where `assignedTo` = `req.user.userId`.
 
-Each task includes:
+Example task object:
 
 ```json
 {
   "id": 1,
-  "title": "...",
-  "description": "...",
+  "title": "Call customer",
+  "description": "Follow up",
   "status": "PENDING",
   "assignedTo": 2,
   "customerId": 1,
@@ -448,15 +462,15 @@ Each task includes:
 ```
 
 **Rules:**
-- EMPLOYEE can only update tasks assigned to them. Else 403 Forbidden.
+- EMPLOYEE can only update tasks assigned to them → 403 Forbidden for others.
 - ADMIN can update any task.
 - 404 if task not found.
 
 ---
 
-## Example curl Commands
+## Example curl Commands (Local)
 
-**Note:** Replace `<ADMIN_TOKEN>` and `<EMP_TOKEN>` with real tokens from `/auth/login`.
+Replace `<ADMIN_TOKEN>` / `<EMP_TOKEN>` with tokens from `/auth/login`.
 
 ### Auth
 
@@ -476,7 +490,7 @@ curl -X POST http://localhost:3000/auth/login \
   -d '{"email":"admin@example.com","password":"password123"}'
 ```
 
-### Users (Admin only)
+### Users (Admin)
 
 ```bash
 curl -X GET http://localhost:3000/users \
@@ -494,16 +508,23 @@ curl -X POST http://localhost:3000/customers \
   -d '{"name":"John","email":"john@example.com","phone":"9999999999","company":"Acme"}'
 ```
 
-**List:**
+**List with pagination:**
 
 ```bash
 curl -X GET "http://localhost:3000/customers?page=1&limit=10" \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
 ```
 
+**Search:**
+
+```bash
+curl -X GET "http://localhost:3000/customers?search=john" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
 ### Tasks
 
-**Create task as admin:**
+**Create task:**
 
 ```bash
 curl -X POST http://localhost:3000/tasks \
@@ -512,7 +533,7 @@ curl -X POST http://localhost:3000/tasks \
   -d '{"title":"Call customer","description":"Follow up","assignedTo":2,"customerId":1,"status":"PENDING"}'
 ```
 
-**Get tasks as admin:**
+**Get tasks:**
 
 ```bash
 curl -X GET http://localhost:3000/tasks \
@@ -532,7 +553,7 @@ curl -X PATCH http://localhost:3000/tasks/1/status \
 
 ## Smoke Test Script
 
-A simple script is included to verify main flows end-to-end:
+A simple script verifies main flows end-to-end:
 
 ```bash
 npm run smoke:test
@@ -545,13 +566,78 @@ It performs:
 - Create customer.
 - Create task assigned to employee.
 - List tasks as admin.
-- Check console output to confirm all steps return expected statuses (201 / 200).
+- Check console output to confirm all statuses (201/200).
 
 ---
 
-## Notes
+## Testing with Jest
+Basic integration tests are under tests/ and use Jest + Supertest.
 
-- No Docker is used for this implementation; PostgreSQL is expected to be running locally.
-- Passwords are never returned in any API response.
-- All protected routes enforce JWT auth and role checks.
-- Error codes follow assignment guidelines: 400, 401, 403, 404, 409 as appropriate.
+Run:
+
+bash
+npm test
+Current tests cover:
+
+Auth: register/login flow.
+
+Customers: admin creating a customer and listing/searching.
+
+Docker Support
+You can run the app and Postgres with Docker.
+
+docker-compose
+docker-compose.yml:
+
+db: Postgres 15, exposed on 5432.
+
+app: Node.js app, uses DATABASE_URL pointing to db.
+
+Run:
+
+bash
+docker compose up --build
+App: http://localhost:3000
+Swagger: http://localhost:3000/api-docs
+
+The Dockerfile runs:
+
+```bash
+npx prisma migrate deploy && node src/server.js
+```
+
+on container start, so migrations are applied automatically when `DATABASE_URL` is set.
+
+---
+
+## Deployment (Render + Neon PostgreSQL)
+
+The app is deployed on Render using a Neon PostgreSQL database.
+
+- **Live API:** https://mini-crm-backend-nyuy.onrender.com
+- **Swagger:** https://mini-crm-backend-nyuy.onrender.com/api-docs
+
+Render setup:
+
+Environment: Docker
+
+Env vars:
+
+DATABASE_URL: Neon connection string (...sslmode=require)
+
+JWT_SECRET: secret value
+
+PORT: provided by Render (app uses process.env.PORT || 3000)
+
+Dockerfile CMD:
+
+npx prisma migrate deploy && node src/server.js
+
+Prisma migrations are automatically applied against Neon on each container start.
+
+Notes
+Passwords are never returned in responses.
+
+All protected routes enforce JWT auth and role-based authorization.
+
+Error codes follow assignment guidelines: 400, 401, 403, 404, 409 where appropriate.
