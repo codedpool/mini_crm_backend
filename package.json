@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "smoke:test": "node scripts/smoke-test.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
+    "node-fetch": "^3.3.2",
     "pg": "^8.17.2",
     "prisma": "^6.19.2",
     "swagger-jsdoc": "^6.2.8",
