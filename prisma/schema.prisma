@@ -1,11 +1,10 @@
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // In Prisma 7, the URL is configured in prisma.config.ts, not here.
+  url      = env("DATABASE_URL")
 }
 
 // 1. User Model (Admin or Employee)
@@ -17,32 +16,27 @@ model User {
   role      Role     @default(EMPLOYEE)
   createdAt DateTime @default(now())
 
-  // Relations
-  tasks     Task[]   
+  tasks     Task[]
 }
 
-// 2. Customer Model
 model Customer {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   phone     String   @unique
-  company   String?  // Optional
+  company   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  tasks     Task[]   
+  tasks     Task[]
 }
 
-// 3. Task Model
 model Task {
   id          Int        @id @default(autoincrement())
   title       String
   description String?
   status      TaskStatus @default(PENDING)
 
-  // Foreign Keys
   assignedTo  Int
   user        User       @relation(fields: [assignedTo], references: [id])
 
@@ -53,7 +47,6 @@ model Task {
   updatedAt   DateTime   @updatedAt
 }
 
-// Enums
 enum Role {
   ADMIN
   EMPLOYEE

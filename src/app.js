@@ -5,6 +5,9 @@ const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 
+const authRoutes = require('./routes/auth.routes');
+
+
 const app = express();
 
 // Middlewares
@@ -44,5 +47,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.get('/', (req, res) => {
   res.json({ message: 'Mini CRM Backend is running!' });
 });
+
+app.use('/auth', authRoutes);
 
 module.exports = app;
